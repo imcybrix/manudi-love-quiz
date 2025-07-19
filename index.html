@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Manudi's Love Quiz 💖</title>
+<style>
+  body {
+    background: #ffe6f0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    text-align: center;
+    padding: 2rem;
+    color: #333;
+  }
+  #quiz-container {
+    max-width: 400px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    padding: 1.5rem;
+  }
+  h1 {
+    color: #d6336c;
+    margin-bottom: 1rem;
+  }
+  .question {
+    font-size: 1.2rem;
+    margin-bottom: 1rem;
+  }
+  .answers button {
+    background: #f06292;
+    border: none;
+    padding: 0.7rem 1.2rem;
+    margin: 0.3rem;
+    border-radius: 12px;
+    font-size: 1rem;
+    color: white;
+    cursor: pointer;
+    transition: background 0.3s;
+  }
+  .answers button:hover {
+    background: #d6336c;
+  }
+  #result {
+    font-size: 1.4rem;
+    margin-top: 1.5rem;
+    color: #d6336c;
+    font-weight: bold;
+  }
+  #retry-btn {
+    margin-top: 1rem;
+    padding: 0.5rem 1rem;
+    background: #d6336c;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+  }
+  /* Hearts animation container */
+  #hearts-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    overflow: visible;
+    z-index: 1000;
+  }
+  .heart {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    background: #ff3366;
+    transform: rotate(45deg);
+    animation: floatUp 2.5s forwards;
+  }
+  .heart::before,
+  .heart::after {
+    content: "";
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    background: #ff3366;
+    border-radius: 50%;
+  }
+  .heart::before {
+    top: -10px;
+    left: 0;
+  }
+  .heart::after {
+    top: 0;
+    left: -10px;
+  }
+  @keyframes floatUp {
+    0% {
+      opacity: 1;
+      transform: translateY(0) rotate(45deg);
+    }
+    100% {
+      opacity: 0;
+      transform: translateY(-150px) rotate(45deg);
+    }
+  }
+  /* Input styling for open answer */
+  #text-answer {
+    padding: 0.5rem;
+    font-size: 1rem;
+    width: 80%;
+    border-radius: 8px;
+    border: 1px solid #d6336c;
+    margin-bottom: 0.5rem;
+  }
+  #submit-answer {
+    background: #f06292;
+    border: none;
+    padding: 0.6rem 1.2rem;
+    color: white;
+    font-size: 1rem;
+    border-radius: 12px;
+    cursor: pointer;
+  }
+  #submit-answer:hover {
+    background: #d6336c;
+  }
+  
+ /* Responsive adjustments */
+  @media (max-width: 600px) {
+    #quiz-container {
+      width: 90vw;
+      padding: 1rem;
+    }
+    .answers button {
+      padding: 1rem 1.5rem;
+      font-size: 1.1rem;
+      margin: 0.5rem 0;
+      display: block;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    #text-answer {
+      width: 100%;
+      font-size: 1.1rem;
+    }
+    #submit-answer {
+      width: 100%;
+      padding: 1rem;
+      font-size: 1.1rem;
+    }
+    #result img {
+      width: 150px !important;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div id="quiz-container">
+  <h1>Manudi's Love Quiz 💖</h1>
+  <div id="question-box">
+    <div class="question" id="question-text">Question will appear here</div>
+    <div class="answers" id="answers-container">
+      <!-- Answer buttons or input go here -->
+    </div>
+  </div>
+  <div id="result"></div>
+  <button id="retry-btn" style="display:none;">Try Again</button>
+</div>
+
+<div id="hearts-container"></div>
+
+<script>
+  const quizData = [
+    {
+      question: "What is my favorite memory of us",
+      answers: ["First Hug", "First Kiss", "When we first said “I love you”", "Our First Video Call"],
+      correctIndex: 1, // index of correct answer
+      type: "choice"
+    },
+    {
+      question: "What is my favorite nickname to call you",
+      answers: ["Patiyo", "Wifey", "Menika", "Kitty"],
+      correctIndex: 2,
+      type: "choice"
+    },
+    {
+      question: "What’s my most favorite thing about you?",
+      answers: ["Your Kind and Caring Heart", "Your Calmness", "Your Vibe", "Your Voice"],
+      correctIndex: 0,
+      type: "choice"
+    },
+    {
+      question: "Where will we spend our honeymoon?",
+      answers: ["switzerland", "switerland", "swizterland", "switzeland", "switzrland", "switseland", "switserland", "switizerland", "switzrland", "switerzland"],
+      type: "text"
+    },
+    {
+      question: "In about 10 years, which position do I like to see you in?",
+      answers: ["wife", "my wife", "as wife", "wifey"],
+      type: "text"
+    }
+  ];
+
+  let currentQuestion = 0;
+
+  const questionText = document.getElementById('question-text');
+  const answersContainer = document.getElementById('answers-container');
+  const resultDiv = document.getElementById('result');
+  const retryBtn = document.getElementById('retry-btn');
+  const heartsContainer = document.getElementById('hearts-container');
+
+  function loadQuestion() {
+    resultDiv.textContent = '';
+    retryBtn.style.display = 'none';
+    const q = quizData[currentQuestion];
+    questionText.textContent = q.question;
+    answersContainer.innerHTML = '';
+
+    if (q.type === "choice") {
+      // Show multiple choice buttons
+      q.answers.forEach((ans, idx) => {
+        const btn = document.createElement('button');
+        btn.textContent = ans;
+        btn.onclick = () => checkAnswerChoice(idx);
+        answersContainer.appendChild(btn);
+      });
+    } else if (q.type === "text") {
+      // Show text input and submit button
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.id = 'text-answer';
+      input.placeholder = 'Type your answer here...';
+      answersContainer.appendChild(input);
+
+      const submitBtn = document.createElement('button');
+      submitBtn.id = 'submit-answer';
+      submitBtn.textContent = 'Submit';
+      submitBtn.onclick = () => checkAnswerText();
+      answersContainer.appendChild(submitBtn);
+
+      input.focus();
+      input.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          checkAnswerText();
+        }
+      });
+    }
+  }
+
+  function checkAnswerChoice(selectedIndex) {
+    const q = quizData[currentQuestion];
+    if (selectedIndex === q.correctIndex) {
+      currentQuestion++;
+      if (currentQuestion === quizData.length) {
+        showSuccess();
+      } else {
+        loadQuestion();
+      }
+    } else {
+      resultDiv.textContent = "Oops! Try again, Manudi~ 💖";
+      retryBtn.style.display = 'inline-block';
+    }
+  }
+
+  function checkAnswerText() {
+    const q = quizData[currentQuestion];
+    const input = document.getElementById('text-answer');
+    const answer = input.value.toLowerCase().trim();
+
+    // Check if input includes any accepted answer substring
+    const correct = q.answers.some(ans => answer.includes(ans.toLowerCase()));
+
+    if (correct) {
+      currentQuestion++;
+      if (currentQuestion === quizData.length) {
+        showSuccess();
+      } else {
+        loadQuestion();
+      }
+    } else {
+      resultDiv.textContent = "Oops! Try again, Manudi~ 💖";
+      retryBtn.style.display = 'inline-block';
+    }
+  }
+
+  retryBtn.onclick = () => {
+    resultDiv.textContent = '';
+    retryBtn.style.display = 'none';
+  };
+
+  function showSuccess() {
+    questionText.textContent = "You got all right, My Kitty! 💕";
+    answersContainer.innerHTML = '';
+    resultDiv.textContent = "You always have my heart! ❤️";
+	
+
+  // Add GIF image below the result text
+    const gif = document.createElement('img');
+    gif.src = 'love.gif';  // Put your GIF file here in the same folder
+    gif.alt = 'Love animation';
+    gif.style.width = '200px';
+    gif.style.marginTop = '1rem';
+    resultDiv.appendChild(gif);
+
+    // Show heart animation
+    for(let i=0; i<30; i++) {
+      createHeart();
+    }
+	
+    // Play success sound
+	const audio1 = new Audio ('meow.mp3');
+    const audio2 = new Audio('sparkle.mp3');
+    audio1.play();
+	audio2.play();
+
+  }
+
+
+  function createHeart() {
+    const heart = document.createElement('div');
+    heart.classList.add('heart');
+    heart.style.left = Math.random() * window.innerWidth + 'px';
+    heart.style.top = window.innerHeight + 'px';
+    heartsContainer.appendChild(heart);
+
+    setTimeout(() => {
+      heart.remove();
+    }, 2500);
+  }
+
+  loadQuestion();
+</script>
+
+</body>
+</html>
